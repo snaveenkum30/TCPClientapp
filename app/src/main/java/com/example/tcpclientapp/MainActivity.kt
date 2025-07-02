@@ -52,7 +52,10 @@ class MainActivity : ComponentActivity() {
             Surface(modifier = Modifier.fillMaxSize()) {
                 Column(modifier = Modifier.padding(16.dp)) {
 
-                    Text("\ud83d\udcf1 TCP Location Sender", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        "\ud83d\udcf1 TCP Location Sender",
+                        style = MaterialTheme.typography.titleLarge
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // \u25b6 Start Button
@@ -137,9 +140,10 @@ class MainActivity : ComponentActivity() {
         val csvContent = buildString {
             append("Latitude,Longitude\n")
             logData.lines().forEach { line ->
-                val lat = Regex("Lat:\\s*([-\\d.]+)").find(line)?.groupValues?.get(1)
-                val lon = Regex("Lon:\\s*([-\\d.]+)").find(line)?.groupValues?.get(1)
-                if (lat != null && lon != null) {
+                val parts = line.split(",")
+                if (parts.size > 13) {
+                    val lat = parts[11]
+                    val lon = parts[13]
                     append("$lat,$lon\n")
                 }
             }
@@ -166,10 +170,10 @@ class MainActivity : ComponentActivity() {
         if (uri != null) {
             resolver.openOutputStream(uri).use { outputStream ->
                 outputStream?.write(csvContent.toByteArray())
-                Toast.makeText(this, "CSV saved to Downloads \u2705", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "CSV saved to Downloads ✅", Toast.LENGTH_SHORT).show()
             }
         } else {
-            Toast.makeText(this, "Failed to create file \u274c", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Failed to create file ❌", Toast.LENGTH_SHORT).show()
         }
     }
 }
