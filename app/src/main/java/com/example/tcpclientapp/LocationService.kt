@@ -20,13 +20,15 @@ class LocationService : Service() {
         val latDir = if (lat >= 0) "N" else "S"
         val lonDir = if (lon >= 0) "E" else "W"
 
-        val absLat = kotlin.math.abs(lat)
-        val absLon = kotlin.math.abs(lon)
+        // ✅ Move decimal point 2 digits right (multiply by 100), and round to 2 decimals
+        val absLat = String.format("%.2f", kotlin.math.abs(lat) * 100)
+        val absLon = String.format("%.2f", kotlin.math.abs(lon) * 100)
 
         return "&PEIS,N,VTS,LP,IPC_MTC_v1.23_c,$imei,$ignStatus,0," +
                 "$time,$date,$gpsStatus,$absLat,$latDir,$absLon,$lonDir," +
                 "0,31,303UP,0.00,1.07,1,1,1,1,0"
     }
+
 
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
