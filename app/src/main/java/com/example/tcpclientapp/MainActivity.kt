@@ -21,15 +21,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
-import kotlinx.coroutines.launch
+import androidx.core.app.NotificationCompat
+
+
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var locationServiceIntent: Intent
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
         locationServiceIntent = Intent(this, LocationService::class.java)
 
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
             var statusText by remember { mutableStateOf("Service not running") }
             var locationLog by remember { mutableStateOf("") }
             val scrollState = rememberScrollState()
-            val coroutineScope = rememberCoroutineScope()
+
 
             // Update UI when new location is received
             DisposableEffect(Unit) {
@@ -138,13 +140,9 @@ class MainActivity : ComponentActivity() {
 
     private fun saveCSVWithMediaStore(logData: String) {
         val csvContent = buildString {
-            append("Latitude,Longitude\n")
             logData.lines().forEach { line ->
-                val parts = line.split(",")
-                if (parts.size > 13) {
-                    val lat = parts[11]
-                    val lon = parts[13]
-                    append("$lat,$lon\n")
+                if (line.startsWith("&PEIS")) {
+                    append("\"$line\"\n")  // Wrap in double quotes so Excel keeps it in one column
                 }
             }
         }

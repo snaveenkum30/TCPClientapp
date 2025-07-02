@@ -11,7 +11,7 @@ import java.net.Socket
 class LocationService : Service() {
 
     private fun generateFormattedLocationLine(lat: Double, lon: Double): String {
-        val imei = "866758041740438" // Replace with actual IMEI if needed
+        val imei = "866758041740438"
         val gpsStatus = "A"
         val ignStatus = "IGNOFF"
         val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
@@ -20,7 +20,6 @@ class LocationService : Service() {
         val latDir = if (lat >= 0) "N" else "S"
         val lonDir = if (lon >= 0) "E" else "W"
 
-        // ✅ Move decimal point 2 digits right (multiply by 100), and round to 2 decimals
         val absLat = String.format("%.2f", kotlin.math.abs(lat) * 100)
         val absLon = String.format("%.2f", kotlin.math.abs(lon) * 100)
 
@@ -29,12 +28,13 @@ class LocationService : Service() {
                 "0,31,303UP,0.00,1.07,1,1,1,1,0"
     }
 
+    // 🔁 List of 3 servers (replace IPs and ports with actual values)
+    private val publicIP = "49.207.186.71"
+    private val portList = listOf(2456 , 1345, 1443)
 
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
-    private val SERVER_IP = "49.207.186.71"
-    private val SERVER_PORT = 1345
 
     companion object {
         var onNewLocation: ((String) -> Unit)? = null
@@ -46,11 +46,15 @@ class LocationService : Service() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         val channelId = "location_channel"
-        val channel = NotificationChannel(channelId, "Location Service", NotificationManager.IMPORTANCE_LOW)
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Location Service", NotificationManager.IMPORTANCE_LOW)
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
 
         val notification: Notification = Notification.Builder(this, channelId)
+
             .setContentTitle("Location Sending")
             .setContentText("Sending location to server...")
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
@@ -71,35 +75,41 @@ class LocationService : Service() {
                 result.lastLocation?.let { loc ->
                     val lat = loc.latitude
                     val lon = loc.longitude
-                    sendLocationToServer(lat, lon)
+                    sendLocationToAllServers(lat, lon)
+
                 }
             }
         }
 
-         fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
-    }
-
-    private fun sendLocationToServer(lat: Double, lon: Double) {
-        val message = generateFormattedLocationLine(lat, lon)
-
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                val socket = Socket(SERVER_IP, SERVER_PORT)
-                val writer = PrintWriter(socket.getOutputStream(), true)
-                writer.println(message)
-                socket.close()
-            } catch (e: Exception) {
-                // Optionally log error
-            }
-
-            // Show sent message in MainActivity
-            withContext(Dispatchers.Main) {
-                onNewLocation?.invoke(message)
-            }
+        if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+            checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
         }
     }
 
-    override fun onDestroy() {
+    private fun sendLocationToAllServers(lat: Double, lon: Double) {
+        val message = generateFormattedLocationLine(lat, lon)
+
+        portList.forEach { port ->
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    val socket = Socket(publicIP, port)
+                    val writer = PrintWriter(socket.getOutputStream(), true)
+                    writer.println(message)
+                    socket.close()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        // 👇 This updates the UI log
+        onNewLocation?.invoke(message)
+    }
+
+
+
+        override fun onDestroy() {
         super.onDestroy()
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
