@@ -10,6 +10,25 @@ import java.net.Socket
 
 class LocationService : Service() {
 
+    private fun generateFormattedLocationLine(lat: Double, lon: Double): String {
+        val imei = "866758041740438" // Replace with actual IMEI if needed
+        val gpsStatus = "A"
+        val ignStatus = "IGNOFF"
+        val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        val date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+
+        val latDir = if (lat >= 0) "N" else "S"
+        val lonDir = if (lon >= 0) "E" else "W"
+
+        val absLat = kotlin.math.abs(lat)
+        val absLon = kotlin.math.abs(lon)
+
+        return "&PEIS,N,VTS,LP,IPC_MTC_v1.23_c,$imei,$ignStatus,0," +
+                "$time,$date,$gpsStatus,$absLat,$latDir,$absLon,$lonDir," +
+                "0,31,303UP,0.00,1.07,1,1,1,1,0"
+    }
+
+
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
     private val SERVER_IP = "49.207.186.71"
@@ -59,7 +78,8 @@ class LocationService : Service() {
     }
 
     private fun sendLocationToServer(lat: Double, lon: Double) {
-        val message = "LAT:$lat, LON:$lon"
+        val message = generateFormattedLocationLine(lat, lon)
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val socket = Socket(SERVER_IP, SERVER_PORT)

@@ -28,7 +28,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var locationServiceIntent: Intent
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         locationServiceIntent = Intent(this, LocationService::class.java)
 
