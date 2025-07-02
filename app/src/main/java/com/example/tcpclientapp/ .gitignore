@@ -1,0 +1,16 @@
+# Kotlin/Java/Android stuff
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+
+# Sign-in keys
+*.jks
+*.keystore
+
+# OS files
+Thumbs.db
